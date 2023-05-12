@@ -1,0 +1,64 @@
+[package]
+name = "nesos"
+version = "0.1.0"
+edition = "2018"
+
+# leave qemu automatically when the test cases are done.
+# put the device on iobase port 0xf4, and the size of the port is 0x04.
+# qemu attaches the device to the isa bus.
+# when a value is written to the port, qemu will exit with (value << 1) | 1 as the exit code.
+# use the in and out instructions in asm to write to the ports.
+[package.metadata.bootimage]
+test-timeout = 100
+test-args = [
+    "-device", 
+    "isa-debug-exit,iobase=0xf4,iosize=0x04",
+    # put the serial port
+    "-serial",
+    # read it out into the terminal
+    "stdio",
+    "-display",
+    "none"
+]
+run-args = [
+    "-serial",
+    # read it out into the terminal
+    "stdio",
+    # create a sink with the name snd0 using alsa
+    "-audiodev",
+    "alsa,id=snd0",
+    # connect the pc speaker to the sink, therefore now it's all audible
+    "-machine",
+    "pcspk-audiodev=snd0",
+    "-device",
+    "AC97,audiodev=snd0"
+]
+# if the bootimage runner gets this success code, it'll return a success code.
+# if we didn't do this, it'd see the 33 success code and interpret that as an error.
+# bootimage runner is a wrapper around qemu here, so far as to handle the error code qemu returns.
+test-success-exit-code = 33 # (0x10 << 1 ) | 1
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bootloader = {version = "0.9.23", features = ["map_physical_memory"]}
+volatile = "0.2.6"
+# interior mutability
+spin = "0.5.2"
+# provides calls to asm instructions.
+x86_64 = "0.14.2"
+# serial communications over a port
+uart_16550 = "0.2.0"
+# programmable interrupt controller ABI
+pic8259 = "0.10.1"
+# common translations for keycodes from the PIC. three main languages of "keycode"
+pc-keyboard = "0.5.0"
+runes = "0.2.5"
+# helper for implementing our static allocator object.
+linked_list_allocator = "0.9.0"
+vga = "0.2.8"
+
+# usually requires the stdlib, we'll take that out in the features.
+[dependencies.lazy_static]
+version = "1.0"
+features = ["spin_no_std"]

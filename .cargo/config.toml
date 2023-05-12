@@ -1,0 +1,12 @@
+# we have to compile the core library for our target triple ourselves.
+
+[build]
+target = "x86_64-nesos.json"
+
+[target.'cfg(target_os = "none")']
+runner = "bootimage runner"
+
+# need mem management
+[unstable]
+build-std-features = ["compiler-builtins-mem"]
+build-std = ["core", "compiler_builtins", "alloc"]
